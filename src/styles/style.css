@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+:root {
+    /* --primary: #007fd4; */
+    --primary: #00FFFF;
+    --secondary: #ff4500;
+    --current: #00ff00;
+    --error: red;
+    --tagColor: #00ff00;
+
+    --textColor: white;
+    --textColorInverted: black;
+
+    --premiumDark: linear-gradient(to right, #434343 0%, black 100%);
+}
+
+* {
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0.6px;
+    /*  @todo */
+
+    color: var(--textColor);
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0px;
+    /* background-color: darkgray; */
+
+    /* Sick carbon */
+    /* background: linear-gradient(to bottom, #323232 0%, #3F3F3F 40%, #1C1C1C 150%), linear-gradient(to top, rgba(255, 255, 255, 0.40) 0%, rgba(0, 0, 0, 0.25) 200%);
+    background-blend-mode: multiply; */
+
+    background: linear-gradient(to bottom left, black 92%, var(--tagColor));
+    background-attachment: fixed;
+    box-sizing: border-box;
+}
+
+h1 {
+    color: var(--primary);
+    text-align: center;
+}
+
+.header {
+    /* background: linear-gradient(to left, black 92%, var(--tagColor)); */
+    border-left: 2px solid var(--primary);
+    border-right: 2px solid var(--primary);
+    margin: 0px 20px;
+    padding: 20px;
+    text-align: center;
+    border-radius: 15px;
+}
+
+.content {
+    padding: 20px;
+    border-radius: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.listOfCoins {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+    padding: 20px;
+    text-align: center;
+    border-radius: 15px;
+    border: 1px solid var(--primary);
+    min-width: 200px;
+}
+
+.chartAndPortfolio {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.chartContainer {
+    border: 1px solid var(--secondary);
+    min-width: 200px;
+    min-height: 200px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+}
+
+.portfolioContainer {
+    border: 1px solid var(--tagColor);
+    min-width: 200px;
+    min-height: 200px;
+    border-radius: 15px;
+}

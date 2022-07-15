@@ -1,0 +1,34 @@
+{
+    "projects": [
+        {
+            "id": 1,
+            "name": "Bitcoin",
+            "handle": "BTC",
+            "price": 20100,
+            "position": 1,
+            "confidence": 95,
+            "releaseYear": 2009,
+            "consesus": "Proof of Work"
+        },
+        {
+            "id": 2,
+            "name": "Ethereum",
+            "handle": "ETH",
+            "price": 1100,
+            "position": 2,
+            "confidence": 78,
+            "releaseYear": 2015,
+            "consesus": "Proof of Work"
+        },
+        {
+            "id": 3,
+            "name": "Cardano",
+            "handle": "ADA",
+            "price": 0.48,
+            "position": 3,
+            "confidence": 88,
+            "releaseYear": 2017,
+            "consesus": "Proof of Stake"
+        }
+    ]
+}

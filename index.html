@@ -5,26 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>17743 - Mihajlo Marjanović</title>
-    <style>
-      body {
-        font-family: "Arial";
-        background: lightgray;
-      }
-      ul {
-        list-style-type: none;
-        padding: 20px;
-      }
-      li {
-        padding: 15px;
-        background: lightcoral;
-        margin-bottom: 10px;
-      }
-    </style>
+    <link rel="stylesheet" href="src/styles/style.css" />
+    <link rel="icon" type="image/png" href="dist/favicon.png" />
   </head>
   <body>
-    <h1>RxJS Demo</h1>
-    <div>
-      <ul id="list"></ul>
+    <div class="header">
+      <h1>CryptoSim - 17743 - Mihajlo Marjanović - RxJS</h1>
+    </div>
+    <div class="content">
+      <div class="listOfCoins"></div>
+      <div class="chartAndPortfolio">
+        <div class="chartContainer">
+          <canvas id="chart" width="400" height="400"></canvas>
+        </div>
+        <div class="portfolioContainer"></div>
+      </div>
     </div>
     <script src="dist/bundle.js"></script>
   </body>
