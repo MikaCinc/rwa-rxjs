@@ -1,0 +1,33 @@
+{
+  "name": "rwa-rxjs",
+  "version": "1.0.0",
+  "description": "For college purpose",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack serve --mode development",
+    "watch": "webpack --watch --config webpack.config.js --mode development",
+    "api": "json-server --watch db.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MikaCinc/rwa-rxjs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MikaCinc/rwa-rxjs/issues"
+  },
+  "homepage": "https://github.com/MikaCinc/rwa-rxjs#readme",
+  "dependencies": {
+    "rxjs": "^7.5.6",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.7.4",
+    "webpack": "^5.73.0",
+    "webpack-dev-server": "^4.9.3"
+  },
+  "devDependencies": {
+    "webpack-cli": "^4.10.0"
+  }
+}
