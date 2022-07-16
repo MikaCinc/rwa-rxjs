@@ -20,6 +20,7 @@
     /*  @todo */
 
     color: var(--textColor);
+    scrollbar-width: thin;
 }
 
 body {
@@ -64,7 +65,7 @@ h1 {
 .listOfCoins {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    /* justify-content: center; */
     align-items: center;
     margin-right: 20px;
     padding: 20px;
@@ -72,6 +73,8 @@ h1 {
     border-radius: 15px;
     border: 2px solid var(--primary);
     min-width: 200px;
+    max-height: 700px;
+    overflow-y: scroll;
 }
 
 .chartAndPortfolio {
@@ -82,10 +85,13 @@ h1 {
 
 .chartContainer {
     border: 2px solid var(--secondary);
-    min-width: 200px;
-    min-height: 200px;
+    min-width: 800px;
+    min-height: 400px;
     margin-bottom: 20px;
     border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .portfolioContainer {
@@ -131,6 +137,10 @@ h1 {
 .projectItem__price {
     align-self: flex-end;
     transition-duration: 0.4s;
+}
+
+.selectedProjectItem {
+    background: linear-gradient(to bottom left, black 70%, var(--primary)) !important;
 }
 
 .clickGrabberMask {

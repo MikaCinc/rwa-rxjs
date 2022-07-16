@@ -4,11 +4,17 @@ import { getApiURL } from "../common";
 import { getAllProjects, getSingleProject } from "../data";
 import { Chart, ChartType, registerables } from "chart.js";
 
+interface IDivContainer {
+    div: HTMLDivElement;
+    projectId: number;
+}
+
 // State
 interface IState {
     chart: Chart;
     selectedProjectId: number;
     priceSpansToUpdate: HTMLSpanElement[];
+    projectItemDivContainers: IDivContainer[];
     projects: IProject[];
     lastBeatPrices: number[];
     isProjectLoading: boolean;
@@ -18,6 +24,7 @@ let initialState: IState = {
     chart: null as Chart,
     selectedProjectId: 1,
     priceSpansToUpdate: [],
+    projectItemDivContainers: [],
     projects: [],
     lastBeatPrices: [],
     isProjectLoading: false
@@ -58,7 +65,10 @@ const generateNextProjects = (projects: IProject[]) => {
     let newProjects = [...projects];
     newProjects.forEach((project: IProject, index: number) => {
         let newProject = { ...project };
-        newProject.price = +(project.price + 1).toFixed(2);
+
+        let random = Math.random() * 10;
+
+        newProject.price = +(random < 5 ? project.price - 1 : project.price + 1).toFixed(2);
         let date = new Date();
         let time = date.getMinutes() + ":" + date.getSeconds();
         newProject.history = [...project.history, { time, value: newProject.price }];
@@ -76,7 +86,7 @@ const initBeat = (projects: IProject[]): Subject<IBeatValue> => {
     let currentProjects = [...projects];
     let lastPrices = [];
     setInterval(() => {
-        lastPrices = [...projects.map(i => i.price)];
+        lastPrices = [...currentProjects.map(i => i.price)];
         currentProjects = generateNextProjects(currentProjects);
         beat.next({
             projects: currentProjects,
@@ -114,13 +124,26 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
     return obs;
 }
 
+const changeSelectedIndicator = (selectedId: number) => {
+    state.value.projectItemDivContainers.forEach(({ div, projectId }) => {
+        if (projectId === selectedId) {
+            div.classList.add("selectedProjectItem");
+        } else {
+            div.classList.remove("selectedProjectItem");
+        }
+        return { div, projectId };
+    });
+}
+
 const projectSelectObservable = (projectDiv: HTMLDivElement): Observable<IProject> => {
     const clickObservable = fromEvent(projectDiv, "click");
-    clickObservable.subscribe(() => {
+    clickObservable.subscribe((ev) => {
+        const id = +(<HTMLDivElement>ev.target).getAttribute("data-project-id");
         state.next({
             ...state.value,
-            isProjectLoading: true
-        })
+            isProjectLoading: true,
+        });
+        changeSelectedIndicator(id);
     });
 
     const projectSelectObservable: Observable<IProject> = clickObservable.pipe(
@@ -151,6 +174,7 @@ const createProjectsList = (
 
     let priceSpans: HTMLSpanElement[] = [];
     let listOfObservables: Observable<IProject>[] = [];
+    let projectItemDivContainers: IDivContainer[] = [];
 
     projects.forEach((project: IProject) => {
         const projectItem = document.createElement("div");
@@ -180,7 +204,13 @@ const createProjectsList = (
         projectClickGrabberMask.classList.add("clickGrabberMask");
         projectItem.appendChild(projectClickGrabberMask);
 
+        // Initial selected project
+        if (project.id === state.value.selectedProjectId) {
+            projectItem.classList.add("selectedProjectItem");
+        }
+
         priceSpans.push(priceSpan);
+        projectItemDivContainers.push({ div: projectItem, projectId: project.id });
 
         projectClickGrabberMask.setAttribute("data-project-id", project.id.toString());
         listOfObservables.push(projectSelectObservable(projectClickGrabberMask)); // handling click events
@@ -189,10 +219,10 @@ const createProjectsList = (
 
     const mergedObservable = merge(...listOfObservables);
     mergedObservable.subscribe((fetchedProject) => {
-        const projectId = fetchedProject.id;
+        const { id } = fetchedProject;
         const currentState = state.value;
         const mergedProjects = [...currentState.projects].map(p => {
-            if (p.id === projectId) {
+            if (p.id === id) {
                 return { ...p, history: [...fetchedProject.history, ...p.history] };
             }
             return p;
@@ -200,14 +230,15 @@ const createProjectsList = (
         state.next({
             ...currentState,
             projects: mergedProjects,
-            selectedProjectId: projectId,
+            selectedProjectId: id,
             isProjectLoading: false
-        })
+        });
     });
 
     state.next({
         ...state.value,
-        priceSpansToUpdate: priceSpans
+        priceSpansToUpdate: priceSpans,
+        projectItemDivContainers
     });
 }
 

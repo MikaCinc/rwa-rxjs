@@ -29,6 +29,16 @@
             "confidence": 88,
             "releaseYear": 2017,
             "consesus": "Proof of Stake"
+        },
+        {
+            "id": 4,
+            "name": "Polkadot",
+            "handle": "DOT",
+            "price": 7.10,
+            "position": 4,
+            "confidence": 74,
+            "releaseYear": 2020,
+            "consesus": "Proof of Stake"
         }
     ]
 }
