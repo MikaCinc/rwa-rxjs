@@ -1,18 +1,26 @@
-import { from, Observable, of, Subject } from "rxjs";
+import { BehaviorSubject, from, Observable, of, Subject } from "rxjs";
 import { IProject } from "../interfaces";
 import { getApiURL } from "../common";
 import { getAllProjects } from "../data";
 import { Chart, ChartType, registerables } from "chart.js";
 
+// State
 interface IState {
     chart: Chart;
     selectedProjectId: number;
+    priceSpansToUpdate: HTMLSpanElement[];
+    projects: IProject[];
 }
 
-let state: IState = {
+let initialState: IState = {
     chart: null as Chart,
-    selectedProjectId: 1
+    selectedProjectId: 1,
+    priceSpansToUpdate: [],
+    projects: []
 }
+
+let state = new BehaviorSubject<IState>(initialState);
+// --------------------
 
 const getDefaultRootForProjectList = (): HTMLDivElement => {
     return document.getElementsByClassName('listOfCoins')[0] as HTMLDivElement;
@@ -21,14 +29,24 @@ const getDefaultRootForProjectList = (): HTMLDivElement => {
 const init = () => {
     const root = getDefaultRootForProjectList();
     initialFetchAndRenderOfProjects(root);
-    state.chart = initChart();
+    state.next({
+        ...state.value,
+        chart: initChart()
+    })
+
+    state.subscribe((newState) => {
+        renderProjects(newState.projects, root);
+
+        const selectedProject = newState.projects.find(i => i.id === newState.selectedProjectId);
+        updateChart(selectedProject);
+    });
 }
 
 const generateNextProjects = (projects: IProject[]) => {
     let newProjects = [...projects];
     newProjects.forEach((project: IProject, index: number) => {
         let newProject = { ...project };
-        newProject.price = project.price + 1;
+        newProject.price = +(project.price + 1).toFixed(2);
         let date = new Date();
         let time = date.getMinutes() + ":" + date.getSeconds();
         newProject.history = [...project.history, { time, value: newProject.price }];
@@ -49,11 +67,11 @@ const initBeat = (projects: IProject[]): Subject<IProject[]> => {
         beat.next(currentProjects);
     }, 1000);
 
-    beat.subscribe((newValue) => renderProjects(newValue));
-
     beat.subscribe((newValue) => {
-        const selectedProject = newValue.find(i => i.id === state.selectedProjectId);
-        updateChart(selectedProject)
+        state.next({
+            ...state.value,
+            projects: newValue
+        })
     });
 
     return beat;
@@ -65,7 +83,10 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
     const listOfCoinsObservable = getAllProjects(root);
     listOfCoinsObservable.subscribe(
         (projects: IProject[]) => {
-            renderProjects(projects, root);
+            state.next({
+                ...state.value,
+                projects
+            })
             obs = of(projects);
             initBeat(projects);
         }
@@ -137,7 +158,7 @@ const initChart = (): Chart => {
 }
 
 const updateChart = (newData: IProject) => {
-    const { chart } = state;
+    const { chart } = state.value;
     if (!chart || !newData || !newData.history || !newData.history.length) return;
 
     const { history, name } = newData;
