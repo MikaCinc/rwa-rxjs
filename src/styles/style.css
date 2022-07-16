@@ -70,7 +70,7 @@ h1 {
     padding: 20px;
     text-align: center;
     border-radius: 15px;
-    border: 1px solid var(--primary);
+    border: 2px solid var(--primary);
     min-width: 200px;
 }
 
@@ -81,7 +81,7 @@ h1 {
 }
 
 .chartContainer {
-    border: 1px solid var(--secondary);
+    border: 2px solid var(--secondary);
     min-width: 200px;
     min-height: 200px;
     margin-bottom: 20px;
@@ -89,8 +89,40 @@ h1 {
 }
 
 .portfolioContainer {
-    border: 1px solid var(--tagColor);
+    border: 2px solid var(--tagColor);
     min-width: 200px;
     min-height: 200px;
     border-radius: 15px;
+}
+
+.projectItem {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    text-align: center;
+    border-radius: 15px;
+    border: 2px solid var(--primary);
+    min-width: 200px;
+    cursor: pointer;
+    transition-duration: 0.4s;
+}
+
+.projectItem:hover {
+    background-color: gray;
+}
+
+.projectItem__innerRow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    width: 100%
+}
+
+.projectItem__consesus {
+    align-self: start;
 }

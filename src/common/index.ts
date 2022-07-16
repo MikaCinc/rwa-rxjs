@@ -1,7 +1,7 @@
 const getApiURL = () => {
-    return "http://localhost:3000/";
+    return "http://localhost:3000";
 };
 
-export default {
+export {
     getApiURL
 };

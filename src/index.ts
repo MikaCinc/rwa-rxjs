@@ -1,5 +1,6 @@
 import { Chart, ChartType, registerables } from 'chart.js';
 import { Observable } from 'rxjs';
+import { init, initialFetchAndRenderOfProjects, renderProjects } from './observables';
 require('./assets/favicon.png');
 
 /* var observable = Observable.create((observer: any) => {
@@ -23,7 +24,7 @@ function logItem(val: any) {
 } */
 
 
-const labels = [
+/* const labels = [
     'January',
     'February',
     'March',
@@ -46,14 +47,16 @@ const config = {
     type: 'line' as ChartType,
     data: data,
     options: {}
-};
+}; */
 
 window.onload = () => {
     console.log('window loaded', document.getElementsByClassName('listOfCoins')[0]);
 
-    Chart.register(...registerables);
+    /* Chart.register(...registerables);
     const myChart = new Chart(
         (document.getElementById('chart') as HTMLCanvasElement).getContext('2d'),
         config
-    );
+    ); */
+
+    init();
 }
