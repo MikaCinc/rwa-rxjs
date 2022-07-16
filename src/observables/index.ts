@@ -1,12 +1,24 @@
 import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge } from "rxjs";
 import { IBeatValue, IProject } from "../interfaces";
-import { getApiURL } from "../common";
+import { getApiURL, getRandom } from "../common";
 import { getAllProjects, getSingleProject } from "../data";
-import { Chart, ChartType, registerables } from "chart.js";
+import { BubbleController, Chart, ChartType, registerables } from "chart.js";
 
 interface IDivContainer {
     div: HTMLDivElement;
     projectId: number;
+}
+
+enum SeasonEnum {
+    BULL = "BULL",
+    BEAR = "BEAR",
+    DEFAULT = "DEFAULT"
+}
+
+const riseChances = {
+    BULL: 90,
+    BEAR: 20,
+    DEFAULT: 55
 }
 
 // State
@@ -18,6 +30,7 @@ interface IState {
     projects: IProject[];
     lastBeatPrices: number[];
     isProjectLoading: boolean;
+    season: SeasonEnum
 }
 
 let initialState: IState = {
@@ -27,7 +40,8 @@ let initialState: IState = {
     projectItemDivContainers: [],
     projects: [],
     lastBeatPrices: [],
-    isProjectLoading: false
+    isProjectLoading: false,
+    season: SeasonEnum.DEFAULT
 }
 
 let state = new BehaviorSubject<IState>(initialState);
@@ -59,6 +73,10 @@ const init = () => {
         const selectedProject = newState.projects.find(i => i.id === newState.selectedProjectId);
         updateChart(selectedProject, newState.isProjectLoading);
     });
+
+    state.subscribe(({ season }) => {
+        document.getElementById('seasonName').innerText = season;
+    })
 }
 
 const generateNextProjects = (projects: IProject[]) => {
@@ -66,15 +84,40 @@ const generateNextProjects = (projects: IProject[]) => {
     newProjects.forEach((project: IProject, index: number) => {
         let newProject = { ...project };
 
-        let random = Math.random() * 10;
+        let fraction = getRandom(0, project.price + 0.1) % 10;
+        // let newPrice = getRandom(project.price - fraction, project.price + fraction);
+        const randInner = getRandom(0, 100);
+        if (randInner < riseChances[state.value.season]) {
+            newProject.price += fraction;
+        } else {
+            newProject.price -= fraction;
+        }
 
-        newProject.price = +(random < 5 ? project.price - 1 : project.price + 1).toFixed(2);
+        newProject.price = +newProject.price.toFixed(3);
+        if (newProject.price <= 0) newProject.price = 0;
+
         let date = new Date();
         let time = date.getMinutes() + ":" + date.getSeconds();
         newProject.history = [...project.history, { time, value: newProject.price }];
         newProjects[index] = newProject;
     });
     return newProjects;
+}
+
+const getNextSeason = (season: SeasonEnum): SeasonEnum => {
+    const random = Math.floor(getRandom(0, 20));
+    switch (random) {
+        case 5:
+            return SeasonEnum.BEAR;
+        case 10:
+            return SeasonEnum.BULL;
+        case 15:
+        case 16:
+        case 17:
+            return SeasonEnum.DEFAULT;
+        default:
+            return season;
+    }
 }
 
 const initBeat = (projects: IProject[]): Subject<IBeatValue> => {
@@ -92,13 +135,14 @@ const initBeat = (projects: IProject[]): Subject<IBeatValue> => {
             projects: currentProjects,
             lastBeatPrices: lastPrices
         });
-    }, 1000);
+    }, 200);
 
     beat.subscribe(({ projects, lastBeatPrices }: IBeatValue) => {
         state.next({
             ...state.value,
             projects,
-            lastBeatPrices
+            lastBeatPrices,
+            season: getNextSeason(state.value.season)
         })
     });
 
@@ -184,7 +228,9 @@ const createProjectsList = (
                         <span>${project.name}</span>
                         <span>${project.handle}</span>
                     </div>
-                    <div class="projectItem__consesus">${project.consesus}</div>
+                    <div class="projectItem__consesus">
+                        <span>${project.consesus}</span>
+                    </div>
                     <div class="projectItem__innerRow">
                         <span>Start: $${project.price}</span>
                         <span>Year: ${project.releaseYear}.</span>

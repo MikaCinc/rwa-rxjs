@@ -39,6 +39,16 @@
             "confidence": 74,
             "releaseYear": 2020,
             "consesus": "Proof of Stake"
+        },
+        {
+            "id": 5,
+            "name": "Avalanche",
+            "handle": "AVAX",
+            "price": 21.24,
+            "position": 5,
+            "confidence": 32,
+            "releaseYear": 2020,
+            "consesus": "Proof of Stake"
         }
     ]
 }
