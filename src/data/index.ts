@@ -22,7 +22,7 @@ const getAllProjects = (
 
 const getSingleProject = (
     projectId: number,
-    chartContainer: HTMLDivElement,
+    chartInfoMessageContainer: HTMLSpanElement,
 ): Observable<IProject> => {
     return from(
         fetch(`${getApiURL()}/projects/${projectId}`)
@@ -30,8 +30,11 @@ const getSingleProject = (
                 if (res.ok) return res.json();
                 else throw new Error("Project not found");
             })
-            .catch((err) => (chartContainer.innerHTML = "Project not found"))
-    ).pipe(delay(1000));
+            .catch((err) => (chartInfoMessageContainer.innerHTML = "Project not found"))
+    ).pipe(
+        delay(500),
+        map(project => ({ ...project, history: [/* { time: "00:00", value: 0 } */] }))
+    );
 }
 
 export {

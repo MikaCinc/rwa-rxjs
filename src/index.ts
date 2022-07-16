@@ -1,6 +1,6 @@
 import { Chart, ChartType, registerables } from 'chart.js';
 import { Observable } from 'rxjs';
-import { init, initialFetchAndRenderOfProjects, renderProjects } from './observables';
+import { init, initialFetchAndRenderOfProjects } from './observables';
 require('./assets/favicon.png');
 
 /* var observable = Observable.create((observer: any) => {

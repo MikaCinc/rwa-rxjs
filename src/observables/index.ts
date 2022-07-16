@@ -1,7 +1,7 @@
-import { BehaviorSubject, from, Observable, of, Subject } from "rxjs";
-import { IProject } from "../interfaces";
+import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge } from "rxjs";
+import { IBeatValue, IProject } from "../interfaces";
 import { getApiURL } from "../common";
-import { getAllProjects } from "../data";
+import { getAllProjects, getSingleProject } from "../data";
 import { Chart, ChartType, registerables } from "chart.js";
 
 // State
@@ -10,13 +10,17 @@ interface IState {
     selectedProjectId: number;
     priceSpansToUpdate: HTMLSpanElement[];
     projects: IProject[];
+    lastBeatPrices: number[];
+    isProjectLoading: boolean;
 }
 
 let initialState: IState = {
     chart: null as Chart,
     selectedProjectId: 1,
     priceSpansToUpdate: [],
-    projects: []
+    projects: [],
+    lastBeatPrices: [],
+    isProjectLoading: false
 }
 
 let state = new BehaviorSubject<IState>(initialState);
@@ -24,6 +28,14 @@ let state = new BehaviorSubject<IState>(initialState);
 
 const getDefaultRootForProjectList = (): HTMLDivElement => {
     return document.getElementsByClassName('listOfCoins')[0] as HTMLDivElement;
+}
+
+const getDefaultChartCanvas = (): HTMLCanvasElement => {
+    return document.getElementById('chart') as HTMLCanvasElement;
+}
+
+const getChartInfoMessageContainer = (): HTMLSpanElement => {
+    return document.getElementById('chartInfoMessage') as HTMLSpanElement;
 }
 
 const init = () => {
@@ -35,10 +47,10 @@ const init = () => {
     })
 
     state.subscribe((newState) => {
-        renderProjects(newState.projects, root);
+        updatePricesInProjectsList(newState.projects, newState.lastBeatPrices, newState.priceSpansToUpdate);
 
         const selectedProject = newState.projects.find(i => i.id === newState.selectedProjectId);
-        updateChart(selectedProject);
+        updateChart(selectedProject, newState.isProjectLoading);
     });
 }
 
@@ -55,22 +67,28 @@ const generateNextProjects = (projects: IProject[]) => {
     return newProjects;
 }
 
-const initBeat = (projects: IProject[]): Subject<IProject[]> => {
-    console.log("beat", projects);
+const initBeat = (projects: IProject[]): Subject<IBeatValue> => {
+    console.log("initBeat", projects);
     if (!projects || !projects.length) return;
 
-    const beat: Subject<IProject[]> = new Subject();
+    const beat: Subject<IBeatValue> = new Subject();
 
     let currentProjects = [...projects];
+    let lastPrices = [];
     setInterval(() => {
+        lastPrices = [...projects.map(i => i.price)];
         currentProjects = generateNextProjects(currentProjects);
-        beat.next(currentProjects);
+        beat.next({
+            projects: currentProjects,
+            lastBeatPrices: lastPrices
+        });
     }, 1000);
 
-    beat.subscribe((newValue) => {
+    beat.subscribe(({ projects, lastBeatPrices }: IBeatValue) => {
         state.next({
             ...state.value,
-            projects: newValue
+            projects,
+            lastBeatPrices
         })
     });
 
@@ -83,6 +101,7 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
     const listOfCoinsObservable = getAllProjects(root);
     listOfCoinsObservable.subscribe(
         (projects: IProject[]) => {
+            createProjectsList(projects, root);
             state.next({
                 ...state.value,
                 projects
@@ -95,7 +114,29 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
     return obs;
 }
 
-const renderProjects = (
+const projectSelectObservable = (projectDiv: HTMLDivElement): Observable<IProject> => {
+    const clickObservable = fromEvent(projectDiv, "click");
+    clickObservable.subscribe(() => {
+        state.next({
+            ...state.value,
+            isProjectLoading: true
+        })
+    });
+
+    const projectSelectObservable: Observable<IProject> = clickObservable.pipe(
+        debounceTime(200),
+        filter((ev: MouseEvent) => ev.target === projectDiv),
+        map((ev: MouseEvent) => +(<HTMLDivElement>ev.target).getAttribute("data-project-id")),
+        filter((projectId: number) => state.value.selectedProjectId !== projectId),
+        switchMap((projectId) =>
+            getSingleProject(projectId, getChartInfoMessageContainer())
+        ),
+    )
+
+    return projectSelectObservable;
+}
+
+const createProjectsList = (
     projects: IProject[],
     root: HTMLDivElement = getDefaultRootForProjectList()
 ) => {
@@ -108,6 +149,9 @@ const renderProjects = (
         return;
     }
 
+    let priceSpans: HTMLSpanElement[] = [];
+    let listOfObservables: Observable<IProject>[] = [];
+
     projects.forEach((project: IProject) => {
         const projectItem = document.createElement("div");
         projectItem.classList.add("projectItem");
@@ -116,13 +160,68 @@ const renderProjects = (
                         <span>${project.name}</span>
                         <span>${project.handle}</span>
                     </div>
+                    <div class="projectItem__consesus">${project.consesus}</div>
                     <div class="projectItem__innerRow">
-                        <span>Price: $${project.price}</span>
+                        <span>Start: $${project.price}</span>
                         <span>Year: ${project.releaseYear}.</span>
                     </div>
-                    <div class="projectItem__consesus">${project.consesus}</div>
                 `;
+
+        const priceContainer = document.createElement("div");
+        priceContainer.classList.add("projectItem__priceContainer");
+        const priceSpan = document.createElement("span");
+        priceSpan.classList.add("projectItem__price");
+        priceSpan.innerHTML = `$${project.price}`;
+        priceContainer.appendChild(priceSpan);
+        projectItem.appendChild(priceContainer);
+
+        // To stop click event propagation to inner span elements
+        const projectClickGrabberMask = document.createElement("div");
+        projectClickGrabberMask.classList.add("clickGrabberMask");
+        projectItem.appendChild(projectClickGrabberMask);
+
+        priceSpans.push(priceSpan);
+
+        projectClickGrabberMask.setAttribute("data-project-id", project.id.toString());
+        listOfObservables.push(projectSelectObservable(projectClickGrabberMask)); // handling click events
         root.appendChild(projectItem);
+    });
+
+    const mergedObservable = merge(...listOfObservables);
+    mergedObservable.subscribe((fetchedProject) => {
+        const projectId = fetchedProject.id;
+        const currentState = state.value;
+        const mergedProjects = [...currentState.projects].map(p => {
+            if (p.id === projectId) {
+                return { ...p, history: [...fetchedProject.history, ...p.history] };
+            }
+            return p;
+        })
+        state.next({
+            ...currentState,
+            projects: mergedProjects,
+            selectedProjectId: projectId,
+            isProjectLoading: false
+        })
+    });
+
+    state.next({
+        ...state.value,
+        priceSpansToUpdate: priceSpans
+    });
+}
+
+const updatePricesInProjectsList = (
+    projects: IProject[],
+    lastBeatPrices: number[],
+    priceSpansToUpdate: HTMLSpanElement[]
+) => {
+
+    if (!projects || !projects.length) return;
+
+    projects.forEach((project: IProject, index) => {
+        priceSpansToUpdate[index].innerHTML = `$${project.price}`;
+        priceSpansToUpdate[index].style.color = project.price > lastBeatPrices[index] ? "#0f0" : "orangered";
     });
 }
 
@@ -153,13 +252,22 @@ const initChart = (): Chart => {
         options: {}
     };
 
-    const ctx = (document.getElementById('chart') as HTMLCanvasElement).getContext('2d');
+    const ctx = (getDefaultChartCanvas()).getContext('2d');
     return new Chart(ctx, config);
 }
 
-const updateChart = (newData: IProject) => {
+const updateChart = (newData: IProject, isLoading: boolean) => {
     const { chart } = state.value;
     if (!chart || !newData || !newData.history || !newData.history.length) return;
+
+    if (isLoading) {
+        getDefaultChartCanvas().style.display = "none";
+        getChartInfoMessageContainer().innerHTML = "Loading...";
+        return;
+    }
+
+    getDefaultChartCanvas().style.display = "block";
+    getChartInfoMessageContainer().innerHTML = "";
 
     const { history, name } = newData;
 
@@ -185,6 +293,5 @@ const updateChart = (newData: IProject) => {
 
 export {
     init,
-    initialFetchAndRenderOfProjects,
-    renderProjects,
+    initialFetchAndRenderOfProjects
 }
