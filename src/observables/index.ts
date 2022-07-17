@@ -339,7 +339,7 @@ const createAssetsList = (
         const marketObservable = buyClickObservable.pipe(
             mergeWith(sellClickObservable),
             concatMap((type) => projectObservable.pipe(
-                switchMap(project => of({ project, type }))
+                switchMap(project => of({ projectId: project.id, type }))
             ))
         );
 
@@ -453,10 +453,13 @@ const updateChart = (newData: IProject, isLoading: boolean) => {
 }
 
 const handleMarketEvent = (marketEvent: IMarketEvent) => {
-    const { type, project } = marketEvent;
-    const { price, id, } = project;
     const currentState = state.value;
-    let { money, assets } = currentState;
+    let { money, assets, projects } = currentState;
+
+    const { type, projectId } = marketEvent;
+    const project: IProject = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const { price, id, } = project;
 
     const asset = assets.find(a => a.id === id);
     if (!asset) return;

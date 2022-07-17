@@ -199,6 +199,8 @@ h1 {
 
 .moneyAndValue>p {
     margin: 0px;
+    font-size: 20px;
+    border-bottom: 2px solid var(--current);
 }
 
 #assets {
@@ -214,7 +216,7 @@ h1 {
 .assetItem {
     display: flex;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 5px;
     width: 100%;
@@ -224,7 +226,7 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 3px 10px;
     border-radius: 15px;
     border: 2px solid var(--current);
     background: transparent;
@@ -244,7 +246,7 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 3px 10px;
     border-radius: 15px;
     border: 2px solid var(--secondary);
     background: transparent;
