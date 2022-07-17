@@ -1,19 +1,9 @@
 import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge } from "rxjs";
-import { IBeatValue, IProject } from "../interfaces";
-import { getApiURL, getRandom } from "../common";
+import { IAsset, IBeatValue, IDivContainer, IProject, IState } from "../interfaces";
+import { getApiURL, getPortfolioValue, getRandom } from "../common";
 import { getAllProjects, getSingleProject } from "../data";
 import { BubbleController, Chart, ChartType, registerables } from "chart.js";
-
-interface IDivContainer {
-    div: HTMLDivElement;
-    projectId: number;
-}
-
-enum SeasonEnum {
-    BULL = "BULL",
-    BEAR = "BEAR",
-    DEFAULT = "DEFAULT"
-}
+import { SeasonEnum } from "../enums";
 
 const riseChances = {
     BULL: 90,
@@ -22,17 +12,6 @@ const riseChances = {
 }
 
 // State
-interface IState {
-    chart: Chart;
-    selectedProjectId: number;
-    priceSpansToUpdate: HTMLSpanElement[];
-    projectItemDivContainers: IDivContainer[];
-    projects: IProject[];
-    lastBeatPrices: number[];
-    isProjectLoading: boolean;
-    season: SeasonEnum
-}
-
 let initialState: IState = {
     chart: null as Chart,
     selectedProjectId: 1,
@@ -41,7 +20,11 @@ let initialState: IState = {
     projects: [],
     lastBeatPrices: [],
     isProjectLoading: false,
-    season: SeasonEnum.DEFAULT
+    season: SeasonEnum.DEFAULT,
+    money: 1000,
+    totalValue: 1000,
+    assets: [],
+    quantitySpansToUpdate: []
 }
 
 let state = new BehaviorSubject<IState>(initialState);
@@ -49,6 +32,10 @@ let state = new BehaviorSubject<IState>(initialState);
 
 const getDefaultRootForProjectList = (): HTMLDivElement => {
     return document.getElementsByClassName('listOfCoins')[0] as HTMLDivElement;
+}
+
+const getDefaultRootForAssetsList = (): HTMLDivElement => {
+    return document.getElementById('assets') as HTMLDivElement;
 }
 
 const getDefaultChartCanvas = (): HTMLCanvasElement => {
@@ -76,6 +63,14 @@ const init = () => {
 
     state.subscribe(({ season }) => {
         document.getElementById('seasonName').innerText = season;
+    })
+
+    state.subscribe((newState) => {
+        const { money } = newState;
+        document.getElementById('money').innerText = `Money: $${money}`;
+        document.getElementById('value').innerText = `Portfolio value: $${getPortfolioValue(newState)}`;
+
+        updateQuantitiesInAssetsList(newState.assets, newState.quantitySpansToUpdate);
     })
 }
 
@@ -156,9 +151,11 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
     listOfCoinsObservable.subscribe(
         (projects: IProject[]) => {
             createProjectsList(projects, root);
+            createAssetsList(projects, getDefaultRootForAssetsList());
             state.next({
                 ...state.value,
-                projects
+                projects,
+                assets: projects.map(i => ({ id: i.id, quantity: 0 }))
             })
             obs = of(projects);
             initBeat(projects);
@@ -285,6 +282,72 @@ const createProjectsList = (
         ...state.value,
         priceSpansToUpdate: priceSpans,
         projectItemDivContainers
+    });
+}
+
+const createAssetsList = (
+    projects: IProject[],
+    root: HTMLDivElement = getDefaultRootForAssetsList()
+) => {
+    if (!root) return;
+    root.innerHTML = ""; // reset previous data
+
+    if (!projects || !projects.length) {
+        root.innerHTML = "Loading...";
+        return;
+    }
+
+    let quantityContainers: HTMLSpanElement[] = [];
+
+    console.log("assets", projects);
+    
+
+    projects.forEach((project: IProject) => {
+        const assetItem = document.createElement("div");
+        assetItem.classList.add("assetItem");
+        assetItem.innerHTML = `
+                        <span>${project.name}: </span>
+                `;
+
+        const quantityContainer = document.createElement("span");
+        quantityContainer.classList.add("assetItem__quantity");
+        quantityContainer.innerHTML = `0 ${project.handle}`;
+        assetItem.appendChild(quantityContainer);
+
+        quantityContainers.push(quantityContainer);
+
+        const buyButton = document.createElement("button");
+        buyButton.classList.add("assetItem__buyButton");
+        buyButton.innerHTML = "Buy";
+        buyButton.setAttribute("data-project-id", project.id.toString());
+        assetItem.appendChild(buyButton);
+
+        const sellButton = document.createElement("button");
+        sellButton.classList.add("assetItem__sellButton");
+        sellButton.innerHTML = "Sell";
+        sellButton.setAttribute("data-project-id", project.id.toString());
+        assetItem.appendChild(sellButton);
+
+        /* projectClickGrabberMask.setAttribute("data-project-id", project.id.toString());
+        listOfObservables.push(projectSelectObservable(projectClickGrabberMask)); // handling click events */
+        root.appendChild(assetItem);
+    });
+
+    state.next({
+        ...state.value,
+        quantitySpansToUpdate: quantityContainers
+    });
+}
+
+const updateQuantitiesInAssetsList = (
+    assets: IAsset[],
+    quantitySpansToUpdate: HTMLSpanElement[]
+) => {
+
+    if (!assets || !assets.length) return;
+
+    assets.forEach((asset: IAsset, index) => {
+        quantitySpansToUpdate[index].innerHTML = `$${asset.quantity}`;
     });
 }
 

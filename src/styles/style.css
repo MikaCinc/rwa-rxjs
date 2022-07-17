@@ -121,14 +121,6 @@ h1 {
     font-weight: bolder;
 }
 
-.portfolioContainer {
-    border: 2px solid var(--tagColor);
-    width: 100%;
-    min-height: 200px;
-    border-radius: 15px;
-    margin-left: 20px;
-}
-
 .projectItem {
     position: relative;
     display: flex;
@@ -185,4 +177,85 @@ h1 {
     background-color: transparent;
     cursor: pointer;
     transition-duration: 0.4s;
+}
+
+.portfolioContainer {
+    border: 2px solid var(--tagColor);
+    width: 100%;
+    height: 200px;
+    border-radius: 15px;
+    margin-left: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: scroll;
+}
+
+.moneyAndValue {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.moneyAndValue>p {
+    margin: 0px;
+}
+
+#assets {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* max-height: 120px;
+    overflow-y: scroll; */
+    box-sizing: border-box;
+}
+
+.assetItem {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 5px;
+    width: 100%;
+}
+
+.assetItem__buyButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid var(--current);
+    background: transparent;
+    color: var(--current);
+    cursor: pointer;
+    transition-duration: 0.4s;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.assetItem__buyButton:hover {
+    background: var(--current);
+    color: var(--textColorInverted);
+}
+
+.assetItem__sellButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid var(--secondary);
+    background: transparent;
+    color: var(--secondary);
+    cursor: pointer;
+    transition-duration: 0.4s;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.assetItem__sellButton:hover {
+    background: var(--secondary);
+    color: var(--textColorInverted);
 }
