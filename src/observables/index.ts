@@ -1,9 +1,10 @@
-import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge } from "rxjs";
+import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith } from "rxjs";
 import { IAsset, IBeatValue, IDivContainer, IProject, IState } from "../interfaces";
 import { getApiURL, getPortfolioValue, getRandom } from "../common";
 import { getAllProjects, getSingleProject } from "../data";
 import { BubbleController, Chart, ChartType, registerables } from "chart.js";
-import { SeasonEnum } from "../enums";
+import { MarketType, SeasonEnum } from "../enums";
+import { IMarketEvent } from "../interfaces/MarketEvent";
 
 const riseChances = {
     BULL: 90,
@@ -67,7 +68,7 @@ const init = () => {
 
     state.subscribe((newState) => {
         const { money } = newState;
-        document.getElementById('money').innerText = `Money: $${money}`;
+        document.getElementById('money').innerText = `Money: $${money.toFixed(3)}`;
         document.getElementById('value').innerText = `Portfolio value: $${getPortfolioValue(newState)}`;
 
         updateQuantitiesInAssetsList(newState.assets, newState.quantitySpansToUpdate);
@@ -155,7 +156,7 @@ const initialFetchAndRenderOfProjects = (root: HTMLDivElement): Observable<IProj
             state.next({
                 ...state.value,
                 projects,
-                assets: projects.map(i => ({ id: i.id, quantity: 0 }))
+                assets: projects.map(i => ({ id: i.id, quantity: 0, handle: i.handle }))
             })
             obs = of(projects);
             initBeat(projects);
@@ -204,7 +205,6 @@ const createProjectsList = (
     projects: IProject[],
     root: HTMLDivElement = getDefaultRootForProjectList()
 ) => {
-    // console.log("projects", projects);
     if (!root) return;
     root.innerHTML = ""; // reset previous data
 
@@ -260,7 +260,9 @@ const createProjectsList = (
         root.appendChild(projectItem);
     });
 
-    const mergedObservable = merge(...listOfObservables);
+    const mergedObservable = merge(...listOfObservables).pipe(
+        debounceTime(200)
+    );
     mergedObservable.subscribe((fetchedProject) => {
         const { id } = fetchedProject;
         const currentState = state.value;
@@ -300,7 +302,9 @@ const createAssetsList = (
     let quantityContainers: HTMLSpanElement[] = [];
 
     console.log("assets", projects);
-    
+
+
+    const marketObservables: Observable<IMarketEvent>[] = [];
 
     projects.forEach((project: IProject) => {
         const assetItem = document.createElement("div");
@@ -328,9 +332,26 @@ const createAssetsList = (
         sellButton.setAttribute("data-project-id", project.id.toString());
         assetItem.appendChild(sellButton);
 
-        /* projectClickGrabberMask.setAttribute("data-project-id", project.id.toString());
-        listOfObservables.push(projectSelectObservable(projectClickGrabberMask)); // handling click events */
+        const buyClickObservable = fromEvent(buyButton, "click").pipe(map(ev => "buy" as MarketType));
+        const sellClickObservable = fromEvent(sellButton, "click").pipe(map(ev => "sell" as MarketType));
+        const projectObservable = of(project);
+
+        const marketObservable = buyClickObservable.pipe(
+            mergeWith(sellClickObservable),
+            concatMap((type) => projectObservable.pipe(
+                switchMap(project => of({ project, type }))
+            ))
+        );
+
+        marketObservables.push(marketObservable);
+
         root.appendChild(assetItem);
+    });
+
+    const mergedObservable = merge(...marketObservables);
+
+    mergedObservable.subscribe((marketEvent: IMarketEvent) => {
+        handleMarketEvent(marketEvent);
     });
 
     state.next({
@@ -347,7 +368,7 @@ const updateQuantitiesInAssetsList = (
     if (!assets || !assets.length) return;
 
     assets.forEach((asset: IAsset, index) => {
-        quantitySpansToUpdate[index].innerHTML = `$${asset.quantity}`;
+        quantitySpansToUpdate[index].innerHTML = `${asset.quantity} ${asset.handle}`;
     });
 }
 
@@ -429,6 +450,34 @@ const updateChart = (newData: IProject, isLoading: boolean) => {
 
     chart.data = data;
     chart.update();
+}
+
+const handleMarketEvent = (marketEvent: IMarketEvent) => {
+    const { type, project } = marketEvent;
+    const { price, id, } = project;
+    const currentState = state.value;
+    let { money, assets } = currentState;
+
+    const asset = assets.find(a => a.id === id);
+    if (!asset) return;
+
+    if (type === "buy") {
+        if (money < price) return;
+        money -= price;
+        state.next({
+            ...state.value,
+            money,
+            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity + 1 } : a)],
+        });
+    } else if (type === "sell") {
+        if (asset.quantity === 0) return;
+        money += price;
+        state.next({
+            ...state.value,
+            money,
+            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity - 1 } : a)],
+        });
+    }
 }
 
 export {

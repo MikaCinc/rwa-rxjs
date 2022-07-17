@@ -19,7 +19,7 @@ const getPortfolioValue = (state: IState): number => {
         initialValue
     );
 
-    return sumWithInitial;
+    return +sumWithInitial.toFixed(3);
 }
 
 export {
