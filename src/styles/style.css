@@ -48,7 +48,7 @@ h1 {
     /* background: linear-gradient(to left, black 92%, var(--tagColor)); */
     border-left: 2px solid var(--primary);
     border-right: 2px solid var(--primary);
-    margin: 10px auto 20px auto;
+    margin: 10px auto 50px auto;
     padding: 20px;
     text-align: center;
     border-radius: 15px;
@@ -61,13 +61,13 @@ h1 {
     width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
     box-sizing: border-box;
 }
 
 .listOfCoins {
     display: flex;
     flex-direction: column;
-    /* justify-content: center; */
     align-items: center;
     margin-right: 20px;
     padding: 20px;
@@ -75,7 +75,7 @@ h1 {
     border-radius: 15px;
     border: 2px solid var(--primary);
     min-width: 200px;
-    max-height: 590px;
+    height: 590px;
     overflow-y: scroll;
 }
 

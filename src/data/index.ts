@@ -15,7 +15,7 @@ const getAllProjects = (
     ).pipe(
         map((projects: IProject[]) => projects.sort((a: IProject, b: IProject) => a.position - b.position)),
         map(projects => projects.map((p: IProject) => ({ ...p, history: [/* { time: "00:00", value: 0 } */] }))),
-        delay(200),
+        delay(1200),
         startWith([])
     );
 }

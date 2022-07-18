@@ -9,7 +9,7 @@ import { IMarketEvent } from "../interfaces/MarketEvent";
 const riseChances = {
     BULL: 90,
     BEAR: 20,
-    DEFAULT: 55
+    DEFAULT: 51
 }
 
 // State
@@ -80,17 +80,21 @@ const generateNextProjects = (projects: IProject[]) => {
     newProjects.forEach((project: IProject, index: number) => {
         let newProject = { ...project };
 
-        let fraction = getRandom(0, project.price + 0.1) % 10;
-        // let newPrice = getRandom(project.price - fraction, project.price + fraction);
-        const randInner = getRandom(0, 100);
-        if (randInner < riseChances[state.value.season]) {
+        const fraction = getRandom(0, project.price + 0.1) % 10,
+            randInner = getRandom(0, 100),
+            confidenceChance = (5 * project.confidence) / 100,
+            totalChance = confidenceChance + riseChances[state.value.season];
+
+        if ([50, 60, 70].includes(randInner)) newProject.price += newProject.price / 10; // Iznenadni rast
+        else if ([20, 30, 40].includes(randInner)) newProject.price -= newProject.price / 10; // Iznenadni pad
+        else if (randInner < totalChance) {
             newProject.price += fraction;
         } else {
             newProject.price -= fraction;
         }
 
+        if (newProject.price <= 0) newProject.price = 0.001; // minimum price
         newProject.price = +newProject.price.toFixed(3);
-        if (newProject.price <= 0) newProject.price = 0;
 
         let date = new Date();
         let time = date.getMinutes() + ":" + date.getSeconds();
@@ -287,6 +291,37 @@ const createProjectsList = (
     });
 }
 
+const handleMarketEvent = (marketEvent: IMarketEvent) => {
+    const currentState = state.value;
+    let { money, assets, projects } = currentState;
+
+    const { type, projectId } = marketEvent;
+    const project: IProject = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const { price, id, } = project;
+
+    const asset = assets.find(a => a.id === id);
+    if (!asset) return;
+
+    if (type === "buy") {
+        if (money < price) return;
+        money -= price;
+        state.next({
+            ...state.value,
+            money,
+            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity + 1 } : a)],
+        });
+    } else if (type === "sell") {
+        if (asset.quantity === 0) return;
+        money += price;
+        state.next({
+            ...state.value,
+            money,
+            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity - 1 } : a)],
+        });
+    }
+}
+
 const createAssetsList = (
     projects: IProject[],
     root: HTMLDivElement = getDefaultRootForAssetsList()
@@ -300,10 +335,6 @@ const createAssetsList = (
     }
 
     let quantityContainers: HTMLSpanElement[] = [];
-
-    console.log("assets", projects);
-
-
     const marketObservables: Observable<IMarketEvent>[] = [];
 
     projects.forEach((project: IProject) => {
@@ -389,20 +420,20 @@ const updatePricesInProjectsList = (
 const initChart = (): Chart => {
     Chart.register(...registerables);
     const labels = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
     ];
 
     const data = {
         labels: labels,
         datasets: [{
-            label: 'My First dataset',
-            backgroundColor: 'rgb(255, 99, 132)',
-            borderColor: 'rgb(255, 99, 132)',
+            label: 'LOADING...',
+            backgroundColor: 'blue',
+            borderColor: 'yellow',
             data: [0, 10, 5, 2, 20, 30, 45],
         }]
     };
@@ -450,37 +481,6 @@ const updateChart = (newData: IProject, isLoading: boolean) => {
 
     chart.data = data;
     chart.update();
-}
-
-const handleMarketEvent = (marketEvent: IMarketEvent) => {
-    const currentState = state.value;
-    let { money, assets, projects } = currentState;
-
-    const { type, projectId } = marketEvent;
-    const project: IProject = projects.find(p => p.id === projectId);
-    if (!project) return;
-    const { price, id, } = project;
-
-    const asset = assets.find(a => a.id === id);
-    if (!asset) return;
-
-    if (type === "buy") {
-        if (money < price) return;
-        money -= price;
-        state.next({
-            ...state.value,
-            money,
-            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity + 1 } : a)],
-        });
-    } else if (type === "sell") {
-        if (asset.quantity === 0) return;
-        money += price;
-        state.next({
-            ...state.value,
-            money,
-            assets: [...assets.map(a => a.id === id ? { ...a, quantity: a.quantity - 1 } : a)],
-        });
-    }
 }
 
 export {

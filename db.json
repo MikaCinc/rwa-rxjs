@@ -16,7 +16,7 @@
             "handle": "ETH",
             "price": 1100,
             "position": 2,
-            "confidence": 78,
+            "confidence": 57,
             "releaseYear": 2015,
             "consesus": "Proof of Work"
         },
@@ -26,7 +26,7 @@
             "handle": "ADA",
             "price": 0.48,
             "position": 3,
-            "confidence": 88,
+            "confidence": 100,
             "releaseYear": 2017,
             "consesus": "Proof of Stake"
         },
