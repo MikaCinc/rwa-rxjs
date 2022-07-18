@@ -1,6 +1,6 @@
 # rwa-rxjs
 
-For college purpose
-Built using TypeScript & RxJS
-![Favicon](./src/assets/favicon.png)
+For college purpose <br/>
+![Favicon](./src/assets/favicon.png) <br/>
+Built using TypeScript & RxJS <br/>
 ![Project preview](./src/assets/rwa-rxjs.png)
